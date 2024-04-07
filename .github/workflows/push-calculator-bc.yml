@@ -1,0 +1,56 @@
+name: Push calculator (bc)
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  get-calculation:
+    name: Get calculation
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        repository: clinton3141/inconvenient-calculator
+    - name: Read calculation file
+      id: read-calculation
+      run: |
+        if [ -s calculation-simple.txt ]; then
+          echo "There's a calculation to do!"
+          echo "has_calculation=true" >> "$GITHUB_OUTPUT"
+          echo "calculation=$(cat calculation-simple.txt)" >> "$GITHUB_OUTPUT"
+        else
+          echo "nothing to do"
+          echo "has_calculation=false" >> "$GITHUB_OUTPUT"
+        fi
+    outputs:
+      has-calculation: ${{ steps.read-calculation.outputs.has_calculation }}
+      calculation: ${{ steps.read-calculation.outputs.calculation }}
+  calculate:
+    name: Calculate
+    runs-on: ubuntu-latest
+    needs: [get-calculation]
+    if: ${{ needs.get-calculation.outputs.has-calculation == 'true' }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          repository: clinton3141/inconvenient-calculator
+      - name: do calculation
+        run: |
+          RESULT=$(echo "${{ needs.get-calculation.outputs.calculation }}" | bc)
+          echo $RESULT > results/${{ github.actor }}-${{ github.run_id }}.txt
+      - name: commit result
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Add calculation result"
+          git pull --rebase
+          git push
