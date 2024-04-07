@@ -1,0 +1,13 @@
+name: Simple Action Calculator
+
+on:
+  workflow_dispatch:
+
+jobs:
+  calculate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Perform calculation
+        run: |
+          CALCULATION="3 + 4"
+          echo "$CALCULATION = $(( CALCULATION ))"
