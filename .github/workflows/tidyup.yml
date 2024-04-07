@@ -1,0 +1,28 @@
+name: Tidy Up
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  tidy-up:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Delete files in results directory
+        run: |
+          if [ -n "$(ls results)" ]; then
+            git rm results/*.txt
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git commit -m "Tidy up results directory"
+            git pull --rebase
+            git push
+          fi
