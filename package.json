@@ -1,0 +1,24 @@
+{
+  "name": "inconvenient-calculator",
+  "description": "",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cp src/*.js ./dist",
+    "safety-check": "node ./dist/check.js",
+    "calculate": "node ./dist/calculate.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/monatheoctocat/my_package.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/monatheoctocat/my_package/issues"
+  },
+  "homepage": "https://github.com/monatheoctocat/my_package",
+  "dependencies": {
+    "nothing-to-see-here": "^1.0.0"
+  }
+}

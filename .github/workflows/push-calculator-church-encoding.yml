@@ -1,0 +1,110 @@
+name: Push calculator (church)
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  check-for-calculation:
+    name: Check for calculation
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          repository: clinton3141/inconvenient-calculator
+      - name: Read calculation file
+        id: read-calculation
+        run: |
+          if [ -s calculation.txt ]; then
+            echo "There's a calculation to do!"
+            echo "has_calculation=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "nothing to do"
+            echo "has_calculation=false" >> "$GITHUB_OUTPUT"
+          fi
+    outputs:
+      has_calculation: ${{ steps.read-calculation.outputs.has_calculation }}
+  setup:
+    name: Setup and build
+    needs: [check-for-calculation]
+    if: ${{ needs.check-for-calculation.outputs.has_calculation == 'true' }}
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.restore-modules.outputs.cache-hit }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          repository: clinton3141/inconvenient-calculator
+      - name: setup node
+        uses: actions/setup-node@v4
+      - name: restore modules
+        id: restore-modules
+        uses: actions/cache@v4
+        with:
+          path: ./node_modules
+          key: ${{ runner.os }}-${{ hashFiles('./package.json') }}
+      - name: restore build
+        id: restore-build
+        uses: actions/cache@v4
+        with:
+          path: ./dist
+          key: ${{ runner.os }}-${{ hashFiles('./src/**/*.js','./package.json') }}
+      - name: npm install
+        if: steps.restore-modules.outputs.cache-hit != 'true'
+        run: npm install
+      - name: build js
+        if: steps.restore-modules.outputs.cache-hit != 'true' || steps.restore-build.outputs.cache-hit != 'true'
+        run: |
+          rm -rf dist
+          mkdir dist
+          npm run build
+  sanity-check:
+    name: Sanity check
+    runs-on: ubuntu-latest
+    needs: [setup]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          repository: clinton3141/inconvenient-calculator
+      - name: restore build
+        id: restore-build
+        uses: actions/cache@v4
+        with:
+          path: ./dist
+          key: ${{ runner.os }}-${{ hashFiles('./src/**/*.js','./package.json') }}
+      - name: safety check
+        run: npm run safety-check
+  calculate:
+    name: Calculate
+    runs-on: ubuntu-latest
+    needs: [sanity-check]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          repository: clinton3141/inconvenient-calculator
+      - name: restore build
+        id: restore-build
+        uses: actions/cache@v4
+        with:
+          path: ./dist
+          key: ${{ runner.os }}-${{ hashFiles('./src/**/*.js','./package.json') }}
+      - name: do calculation
+        run: |
+          npm run calculate -- ${{ github.actor }}-${{ github.run_id }}.txt
+      - name: commit result
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Add calculation result"
+          git pull --rebase
+          git push
