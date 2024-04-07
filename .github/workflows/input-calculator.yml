@@ -1,0 +1,27 @@
+name: Input Calculator
+
+on:
+  workflow_dispatch:
+    inputs:
+      number1:
+        description: 'First number'
+        type: number
+        required: true
+      number2:
+        description: 'Second number'
+        type: number
+        required: true
+      operation:
+        description: 'Operation'
+        type: choice
+        options: ['+', '*']
+        required: true
+
+jobs:
+  calculate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Perform calculation
+        run: |
+          CALCULATION="${{ inputs.number1 }} ${{ inputs.operation }} ${{ inputs.number2 }}"
+          echo "$CALCULATION = $(( CALCULATION ))"
