@@ -35,8 +35,6 @@ jobs:
     needs: [check-for-calculation]
     if: ${{ needs.check-for-calculation.outputs.has_calculation == 'true' }}
     runs-on: ubuntu-latest
-    outputs:
-      cache-hit: ${{ steps.restore-modules.outputs.cache-hit }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
